@@ -17,6 +17,21 @@ module RuboCop
       #
       #   # good
       #   [1, 2, 3].index_with { |el| foo(el) }
+      #
+      # Also looks for static default values and enforces passing them as
+      # positional arguments instead of using a block.
+      #
+      # @example
+      #   # bad
+      #   [1, 2, 3].index_with { true }
+      #   [1, 2, 3].index_with { nil }
+      #   [1, 2, 3].index_with { 3 }
+      #   [1, 2, 3].index_with { :foo }
+      #
+      #   # good
+      #   [1, 2, 3].index_with(true)
+      #   [1, 2, 3].index_with { [] }
+      #   [1, 2, 3].index_with { foo }
       class IndexWith < Base
         extend AutoCorrector
         extend TargetRailsVersion
@@ -72,6 +87,23 @@ module RuboCop
             }
           )
         PATTERN
+
+        DEFAULT_VALUE_MSG = 'Pass static default values to `index_with` as positional arguments.'
+
+        def_node_matcher :on_bad_index_with, <<~PATTERN
+          (block (call _ :index_with) _ {true false nil numeric sym})
+        PATTERN
+
+        def on_block(block)
+          super
+
+          on_bad_index_with(block) do
+            add_offense(block, message: DEFAULT_VALUE_MSG) do |corrector|
+              range = block.send_node.loc.selector.end.join(block.loc.end)
+              corrector.replace(range, "(#{block.body.source})")
+            end
+          end
+        end
 
         private
 

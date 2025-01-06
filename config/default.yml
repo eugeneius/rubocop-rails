@@ -632,7 +632,7 @@ Rails/IndexWith:
   Description: 'Prefer `index_with` over `each_with_object`, `to_h`, or `map`.'
   Enabled: true
   VersionAdded: '2.5'
-  VersionChanged: '2.8'
+  VersionChanged: '<<next>>'
 
 Rails/Inquiry:
   Description: "Prefer Ruby's comparison operators over Active Support's `Array#inquiry` and `String#inquiry`."

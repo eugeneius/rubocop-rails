@@ -107,6 +107,53 @@ RSpec.describe RuboCop::Cop::Rails::IndexWith, :config do
       end
     end
 
+    %w[true false nil 1 0.5 :foo].each do |value|
+      it "registers an offense for `index_with { #{value} }`" do
+        expect_offense(<<~RUBY, value: value)
+          x.index_with { %{value} }
+          ^^^^^^^^^^^^^^^^{value}^^ Pass static default values to `index_with` as positional arguments.
+        RUBY
+
+        expect_correction(<<~RUBY)
+          x.index_with(#{value})
+        RUBY
+      end
+
+      context 'with a block parameter' do
+        it "registers an offense for `index_with { |el| #{value} }`" do
+          expect_offense(<<~RUBY, value: value)
+            x.index_with { |el| %{value} }
+            ^^^^^^^^^^^^^^^^^^^^^{value}^^ Pass static default values to `index_with` as positional arguments.
+          RUBY
+
+          expect_correction(<<~RUBY)
+            x.index_with(#{value})
+          RUBY
+        end
+      end
+
+      context 'with parentheses' do
+        it "registers an offense for `index_with() { #{value} }`" do
+          expect_offense(<<~RUBY, value: value)
+            x.index_with() { %{value} }
+            ^^^^^^^^^^^^^^^^^^{value}^^ Pass static default values to `index_with` as positional arguments.
+          RUBY
+
+          expect_correction(<<~RUBY)
+            x.index_with(#{value})
+          RUBY
+        end
+      end
+    end
+
+    %w[[] {} foo].each do |value|
+      it "does not register an offense for `index_with { #{value} }`" do
+        expect_no_offenses(<<~RUBY)
+          x.index_with { #{value} }
+        RUBY
+      end
+    end
+
     it 'registers an offense for `Hash[map { ... }]`' do
       expect_offense(<<~RUBY)
         Hash[x.map { |el| [el, el.to_sym] }]
